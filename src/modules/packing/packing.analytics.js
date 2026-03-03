@@ -7,12 +7,12 @@ export const getStats = async (filter = {}) => {
         {
             $group: {
                 _id: null,
-                total: { $sum: "$quantity" },
-                count: { $sum: 1 }
+                quantitySum: { $sum: "$quantity" },
+                entryCount: { $sum: 1 }
             }
         }
     ]);
-    return stats[0] || { total: 0, count: 0 };
+    return stats[0] || { quantitySum: 0, entryCount: 0 };
 };
 
 export const getRoleDashboardStats = async (userId, role) => {
@@ -31,9 +31,13 @@ export const getRoleDashboardStats = async (userId, role) => {
     ]);
 
     return {
-        total: total.total,
-        today: today.total,
-        month: month.total,
-        year: year.total
+        total: total.entryCount,
+        today: today.entryCount,
+        month: month.entryCount,
+        year: year.entryCount,
+        totalQuantity: total.quantitySum,
+        todayQuantity: today.quantitySum,
+        monthQuantity: month.quantitySum,
+        yearQuantity: year.quantitySum
     };
 };
