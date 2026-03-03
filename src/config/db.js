@@ -6,15 +6,24 @@ import bcrypt from "bcrypt";
 // Overriding default DNS servers to fix querySrv ECONNREFUSED that happens on some local networks
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-// create async function to connect database here
+let isConnected = false; // Track connection state for Serverless functions (Vercel)
+
 async function connectDB() {
+  if (isConnected) {
+    return; // Use existing connection
+  }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is missing!");
+  }
+
   try {
-    //create databse connection Instance here are store in connectionInstance variable
-    const connectionInstance = await mongoose.connect(process.env.MONGODB_URI);
-    //in console print mongoDB connected with their database name
-    console.log(
-      `MongoDB Connected With Database Name Is ${connectionInstance.connection.name}`,
-    );
+    const connectionInstance = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of hanging
+    });
+
+    isConnected = connectionInstance.connections[0].readyState === 1;
+    console.log(`MongoDB Connected With Database Name Is ${connectionInstance.connection.name}`);
 
     // Seed default admin account
     try {
@@ -33,9 +42,9 @@ async function connectDB() {
       console.error("Error seeding admin:", seedError.message);
     }
   } catch (error) {
-    console.log("MongoDB Connection Failed :", error.message);
-    process.exit(1);
+    console.error("MongoDB Connection Failed:", error.message);
+    throw error; // Let the request error out instead of crashing the lambda
   }
 }
 
-export default connectDB; // call in server.mjs
+export default connectDB;

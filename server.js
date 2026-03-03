@@ -4,16 +4,18 @@ import connectDB from "./src/config/db.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+// Attempt an initial connection (useful for local dev)
+// The middleware in app.js ensures it connects for Vercel Requests
+connectDB().catch(console.error);
 
-// connectDB() called here, and database connect first, and then start server
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port : http://localhost:${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Database connection Failed :", error);
-    process.exit(1);
+// Vercel doesn't need app.listen() - it injects req/res directly into the exported app.
+// We only listen on a port if we are running locally.
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port : http://localhost:${PORT}`);
   });
+}
+
+// Crucial: Export the app for Vercel's Serverless runtime
+export default app;
