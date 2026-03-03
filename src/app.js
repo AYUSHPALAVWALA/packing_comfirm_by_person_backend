@@ -16,9 +16,16 @@ app.use(express.json()); //middleware use to parses incoming JSON requests and m
 app.use(express.urlencoded({ extended: true })); //middleware use to parses URL-encoded form data (HTML form submissions)
 app.use(cookieParser());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Dynamically allow the requesting origin
+        return callback(null, true);
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 })); //middleware use to allows frontend (different port/domain) to access backend APIs
 
 // Vercel Serverless Database Connection Middleware
