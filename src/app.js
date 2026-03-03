@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import cors from "cors";
 import express from "express";
 import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes.js";
@@ -15,18 +14,27 @@ const app = express(); // create express server instance here are store in app v
 app.use(express.json()); //middleware use to parses incoming JSON requests and makes data available in req.body
 app.use(express.urlencoded({ extended: true })); //middleware use to parses URL-encoded form data (HTML form submissions)
 app.use(cookieParser());
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+// Forceful CORS Middleware
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    // If there is an origin, allow it explicitly (required for credentials: true)
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
 
-        // Dynamically allow the requesting origin
-        return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-})); //middleware use to allows frontend (different port/domain) to access backend APIs
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+
+    // Instantly respond to preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    next();
+});
 
 // Vercel Serverless Database Connection Middleware
 // Ensures the DB connects on a cold start before letting API routes fire
